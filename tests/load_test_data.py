@@ -94,10 +94,10 @@ class MongoSampleUser(MongoUser):
     def do_insert_auth_bulk(self):
         self._process('insert-authorisations-in-bulk', lambda: self.authorisation_collection.insert_many(
             [self.generate_new_authorisation() for _ in
-             range(DOCS_PER_BATCH)], ordered=False))
+             range(DOCS_PER_BATCH)], ordered=False), DOCS_PER_BATCH)
 
     @task(weight=1)
     def do_insert_clearing_bulk(self):
         self._process('insert-clearing-in-bulk', lambda: self.clearing_collection.insert_many(
             [self.generate_new_clearing() for _ in
-             range(DOCS_PER_BATCH)], ordered=False))
+             range(DOCS_PER_BATCH)], ordered=False), DOCS_PER_BATCH)
