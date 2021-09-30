@@ -30,7 +30,6 @@ class MongoUser(User):
     def __init__(self, environment):
         super().__init__(environment)
         self.db = CLIENT[DB_NAME]
-        self.collection, self.collection_secondary = None, None
         self.faker = Faker()
 
     def _process(self, name, func, batch_size=1):
@@ -57,7 +56,7 @@ class MongoUser(User):
                     request_type='mongo', name=name, response_time=total_time, response_length=1
                 )
 
-    def ensure_collection(self, coll_name, indexes, read_preference=pymongo.read_preferences.Secondary()):
+    def ensure_collection_with_secondary_rp(self, coll_name, indexes, read_preference=pymongo.read_preferences.Secondary()):
         """
         Define the collection and its indexes
         """
@@ -80,3 +79,27 @@ class MongoUser(User):
 
         # also return the second collection with readPreference
         return collection, self.db.get_collection(coll_name, read_preference=read_preference)
+
+    def ensure_collection(self, coll_name, indexes):
+        """
+        Define the collection and its indexes
+        """
+        # prepare a codec for decimal values
+        decimal_codec = DecimalCodec()
+        type_registry = TypeRegistry([decimal_codec])
+        codec_options = CodecOptions(type_registry=type_registry)
+
+        # create the collection if not exists
+        if coll_name not in self.db.collection_names():
+            collection = self.db.create_collection(coll_name, codec_options=codec_options)
+            print('Collection created')
+        else:
+            collection = self.db.get_collection(coll_name, codec_options=codec_options)
+            print('Collection exists')
+
+        # create the required indexes
+        if indexes:
+            collection.create_indexes(indexes)
+
+        # also return the second collection with readPreference
+        return collection
