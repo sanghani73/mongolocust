@@ -2,8 +2,6 @@ from locust import task, between
 from mongo_user import MongoUser
 
 import pymongo
-import random
-
 
 # docs to insert per batch insert
 DOCS_PER_BATCH = 1000
@@ -83,7 +81,9 @@ class MongoSampleUser(MongoUser):
         Executed every time a new test is started - place init code here
         """
         # prepare the collection
-        self.authorisation_collection = self.ensure_collection('authorisations', '')
+        index1 = pymongo.IndexModel([('auth_id', pymongo.ASCENDING),('alliance_code', pymongo.ASCENDING),("posting_date", pymongo.DESCENDING)],
+                                    name="auth_id_compound")
+        self.authorisation_collection = self.ensure_collection('authorisations', index1)
         self.clearing_collection = self.ensure_collection('clearing', '')
 
     # @task(weight=1)
