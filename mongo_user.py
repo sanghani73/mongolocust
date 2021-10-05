@@ -98,8 +98,8 @@ class MongoUser(User):
             print('Collection exists')
 
         # create the required indexes
-        if indexes:
-            collection.create_indexes(indexes)
+        # if indexes:
+        #     collection.create_indexes(indexes)
 
         # also return the second collection with readPreference
         return collection
