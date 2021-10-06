@@ -7,6 +7,8 @@ import pymongo
 # docs to insert per batch insert
 DOCS_PER_BATCH = 1000
 
+# total number of docs to insert
+TOTAL_DOCS_TO_INSERT = 1613300000 #1,613,300,000 (inc. 7.3m (0.05%) group 1, 146m (0.9%) group 2 & 1,460m (90.5%) group 3)
 
 class MongoSampleUser(MongoUser):
     """
@@ -26,10 +28,12 @@ class MongoSampleUser(MongoUser):
         document = {
             'auth_id': self.faker.uuid4(),
             'merch_id': self.faker.random_int(min=901000, max=901030),
-            'merch_id': self.faker.random_element(elements=OrderedDict([
-                    (self.faker.random_int(min=10000, max=10100), 0.0001), # Group 1
-                    (self.faker.random_int(min=20000, max=20020), 0.0009), # Group 2
-                    (self.faker.random_int(min=30001, max=30002), 0.999) # Group 3
+            # using percentage weights to simulate the number of documents to insert for each group
+            # Group 1 = 0.05%, Group 2 = 0.9% & Group 3 = 90.5%
+            'merch_id': faker.random_element(elements=OrderedDict([
+                    (self.faker.random_int(min=10000, max=10100), 0.005), # Group 1
+                    (self.faker.random_int(min=20000, max=20020), 0.09), # Group 2
+                    (self.faker.random_int(min=30001, max=30002), 0.905) # Group 3
                 ])),
             'alliance_code': self.faker.lexify(text='????', letters='ABCDEFGHIJKLMNOPQRSTUVWXYZ'),
             'bank_name': self.faker.lexify(text='???? PLC.', letters='ABCDEFGHIJKLMNOPQRSTUVWXYZ'),
@@ -147,10 +151,6 @@ class MongoSampleUser(MongoUser):
         index1 = pymongo.IndexModel([('auth_id', pymongo.ASCENDING),('alliance_code', pymongo.ASCENDING),("posting_date", pymongo.DESCENDING)],
                                     name="auth_id_compound")
         self.authorisation_collection = self.ensure_collection('authorisations', index1)
-
-    # @task(weight=1)
-    # def do_insert_document(self):
-    #     self._process('insert-document', self.insert_single_document)
 
     @task(weight=1)
     def do_insert_auth_bulk(self):
