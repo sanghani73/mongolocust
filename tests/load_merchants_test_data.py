@@ -30,7 +30,7 @@ class MongoSampleUser(MongoUser):
             'merch_id': self.faker.random_int(min=901000, max=901030),
             # using percentage weights to simulate the number of documents to insert for each group
             # Group 1 = 0.05%, Group 2 = 0.9% & Group 3 = 90.5%
-            'merch_id': self.faker.random_element(elements=OrderedDict([
+            'merch_id': faker.random_element(elements=OrderedDict([
                     (self.faker.random_int(min=10000, max=10100), 0.005), # Group 1
                     (self.faker.random_int(min=20000, max=20020), 0.09), # Group 2
                     (self.faker.random_int(min=30001, max=30002), 0.905) # Group 3
