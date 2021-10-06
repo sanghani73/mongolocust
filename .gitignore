@@ -130,3 +130,6 @@ dmypy.json
 
 .idea/
 settings.py
+
+#logs
+runlogs/
