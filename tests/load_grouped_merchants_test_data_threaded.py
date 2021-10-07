@@ -94,13 +94,13 @@ def run(group, process_id, docs_to_insert, logFileName):
     print(insert_rate_message)
 
 if __name__ == '__main__':
-    if len(sys.argv) > 2:
+    if len(sys.argv) > 3:
         groupOneDocs = int(sys.argv[1])
         groupTwoDocs = int(sys.argv[2])
         groupThreeDocs = int(sys.argv[3])
         totalDocs = groupOneDocs + groupTwoDocs + groupThreeDocs
     else:
-        print("Please specify the number of documents to load for each group")
+        print("Please specify the number of documents to load for each group. This script expects 3 number of documents to be provided as arguments.")
         exit()
 
     for i in range(2):
