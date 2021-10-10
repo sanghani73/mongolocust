@@ -1,0 +1,9 @@
+# Database name to use
+DB_NAME = 'fiserv'
+
+# cluster connection string
+CLUSTER_URL = f'mongodb+srv://user:password@something.mongodb.net/{DB_NAME}?retryWrites=true&w=majority'
+
+
+# Weighted processing
+PROCESSES = 10
