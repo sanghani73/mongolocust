@@ -14,8 +14,8 @@ processesList = []
 totalDocs = 0
 DOCS_PER_BATCH = 1000
 
-def run(group, process_id, docs_to_insert, logFileName):
-    client = MongoClient(CLUSTER_URL)
+def run(group, process_id, docs_to_insert, cluster_url):
+    client = MongoClient(cluster_url)
     db = client[DB_NAME]
     coll = db[AUTH_COL]
     if (group == 1):
@@ -33,8 +33,9 @@ def run(group, process_id, docs_to_insert, logFileName):
     #     doc = generate_authorisation.Authorisation.generate_new_grouped_authorisation_doc(min_group, max_group)
     #     coll.insert_one(doc)
     #     i += 1
-
-    batches_to_process = math.ceil(docs_to_insert/DOCS_PER_BATCH)
+    batches_to_process = 1
+    if (docs_to_insert > DOCS_PER_BATCH):
+        batches_to_process = math.ceil(docs_to_insert/DOCS_PER_BATCH)
     # execute the insertion of the documents
     for i in range(batches_to_process):        
         coll.insert_many(
@@ -57,14 +58,19 @@ if __name__ == '__main__':
         print("Merchants in group 3 will have an id of 30001 and 30002.\n")
         exit()
 
+    uri = os.environ.get('MONGO_URI')
+    print("got uri from env: ", uri)
+    if not uri:
+         uri = CLUSTER_URL
 
+    print(uri)
     filename = "dataload.log"
     if os.path.exists(filename):
         os.remove(filename)
 
     # create the process list and add processes for each group
     for i in range(totalNumberOfProcesses):
-        process = Process(target=run, args=(group, i, math.ceil(totalDocs / totalNumberOfProcesses), filename))
+        process = Process(target=run, args=(group, i, math.ceil(totalDocs / totalNumberOfProcesses), uri))
         processesList.append(process)
 
     # launch processes
