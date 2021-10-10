@@ -80,7 +80,7 @@ class MongoUser(User):
         # also return the second collection with readPreference
         return collection, self.db.get_collection(coll_name, read_preference=read_preference)
 
-    def ensure_collection(self, coll_name, indexes):
+    def ensure_collection(self, coll_name):
         """
         Define the collection and its indexes
         """
@@ -96,10 +96,6 @@ class MongoUser(User):
         else:
             collection = self.db.get_collection(coll_name, codec_options=codec_options)
             print('Collection exists')
-
-        # create the required indexes
-        # if indexes:
-        #     collection.create_indexes(indexes)
 
         # also return the second collection with readPreference
         return collection
