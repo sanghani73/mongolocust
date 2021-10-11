@@ -11,7 +11,6 @@ class Authorisation:
         """
         document = {
             'auth_id': faker.uuid4(),
-            'merch_id': faker.random_int(min=901000, max=901030),
             # using percentage weights to simulate the number of documents to insert for each group
             # Group 1 = 0.05%, Group 2 = 0.9% & Group 3 = 90.5%
             'merch_id': faker.random_element(elements=OrderedDict([
@@ -19,7 +18,8 @@ class Authorisation:
                     (faker.random_int(min=20000, max=20020), 0.09), # Group 2
                     (faker.random_int(min=30001, max=30002), 0.905) # Group 3
                 ])),
-            'alliance_code': faker.lexify(text='????', letters='ABCDEFGHIJKLMNOPQRSTUVWXYZ'),
+            # 'alliance_code': faker.lexify(text='????', letters='ABCDEFGHIJKLMNOPQRSTUVWXYZ'),
+            'alliance_code': 'CODE123',
             'bank_name': faker.lexify(text='???? PLC.', letters='ABCDEFGHIJKLMNOPQRSTUVWXYZ'),
             'bank_country': faker.country(),
             'posting_date': faker.date_time_between(start_date='-2y', end_date='-1y'),
@@ -135,7 +135,6 @@ class Authorisation:
         """
         document = {
             'auth_id': faker.uuid4(),
-            'merch_id': faker.random_int(min=901000, max=901030),
             # using defined number of requests in script for each group range
             'merch_id': faker.random_int(min=group_range_min, max=group_range_max),
             'alliance_code': faker.lexify(text='????', letters='ABCDEFGHIJKLMNOPQRSTUVWXYZ'),

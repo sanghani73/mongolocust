@@ -7,16 +7,11 @@
  * 
  */
 
-
-
-
 //  var chance = require('chance').Chance();
  var mgenerate = require('mgeneratejs');
-//  var mergeJSON = require('merge-json');
  const { EJSON } = require('bson');
  var MongoClient = require('mongodb').MongoClient;
- const BATCH_SIZE = 1000
-
+ 
  function generateAuth() {
      return mgenerate(
         {
@@ -105,11 +100,7 @@
             }
         })
  }
-
- function print(str) {
-     console.log(str)
- }
-
+ 
 function insertData() {
     var myArgs = process.argv.slice(2);
     if (myArgs.length != 2) {
@@ -119,24 +110,22 @@ function insertData() {
     if  (typeof URI === "undefined") {
         throw("Need to to supply a URI as the first parameter")
     }
-    var numberOfAuths = myArgs[1]
-    if  (typeof numberOfAuths === "undefined") {
-        numberOfAuths = 10000
+    var numberOfDocs = myArgs[1]
+    if  (typeof numberOfDocs === "undefined") {
+        numberOfDocs = 1000
     }
-
-
-    var numberOfIterations = Math.ceil(numberOfAuths/BATCH_SIZE)
-    console.log('numberOfAuths: ', numberOfAuths, ' will iterate ', numberOfIterations, ' times in batchs of 1000');
-
-    for (var j = 0; j < numberOfIterations; ++j) {
-        MongoClient.connect(URI, function(err, client) {
-            // var before = new Date()
-            // Get the collection
-            db = client.db("fiservJS")
+    if (numberOfDocs > 1000000) {
+        console.log("Max number of docs that can be loaded in this script is 1 million as we're doing it in a bulk operation")
+        return
+    }
+    console.log('numberOfDocs: ', numberOfDocs, 'URI: ', URI);
+    
+    MongoClient.connect(URI, function(err, client) {
+        // Get the collection
+        db = client.db("fiservTest");
 
             var batch = db.collection('authorisations').initializeUnorderedBulkOp();                
-            // console.log(Date.now().toLocaleString)
-            for (var i = 0; i < BATCH_SIZE; ++i) {
+            for (var i = 0; i < numberOfDocs; ++i) {
                 var auth = generateAuth()
                 batch.insert(auth);
             }
@@ -148,13 +137,12 @@ function insertData() {
                 }
                 // console.dir(result);
                 client.close();
+                console.log('executed batch ',result)
             });
-            // var after = new Date()
-            // execution_mills = after - before
-            // print("Completed interation "+ j + " in "+execution_mills+" ms")
-        });
-    }
+        if (err) {
+            console.dir(err);
+        }
+    });
 }
-
 
 insertData()
