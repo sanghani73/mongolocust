@@ -8,10 +8,47 @@
  */
 
 //  var chance = require('chance').Chance();
+var fs = require('fs');
 var mgenerate = require('mgeneratejs');
 const { EJSON } = require('bson');
-var MongoClient = require('mongodb').MongoClient;
 const BATCH_SIZE=1000
+var MongoClient = require('mongodb').MongoClient;
+var URI
+var numberOfDocs
+var client
+var db
+
+ 
+function log(data) {
+    fs.appendFileSync('dataload.log',data+"\n", 'utf8');
+    console.log(data)
+}
+
+async function initialize() {
+    var myArgs = process.argv.slice(2);
+    if (myArgs.length != 2) {
+        throw("Need to to supply a URI as the first parameter and number of documents to load as the second")
+    }
+    URI = myArgs[0]
+    if  (typeof URI === "undefined") {
+        throw("Need to to supply a URI as the first parameter")
+    }
+    numberOfDocs = myArgs[1]
+    if  (typeof numberOfDocs === "undefined") {
+        numberOfDocs = 1000
+    }
+    await getConnection().catch(console.dir);
+} 
+
+async function getConnection() {
+    // Connect the client to the server
+    client = await MongoClient.connect(URI, { useNewUrlParser: true });
+
+    // Establish and verify connection
+    db = await client.db('fiservTest');
+
+    console.log("Connected successfully to server");
+}
 
 async function generateAuth() {
     return mgenerate(
@@ -102,52 +139,39 @@ async function generateAuth() {
        })
 }
 
-async function insertData(URI, numberOfDocs) {
-   const client = await MongoClient.connect(URI, { useNewUrlParser: true })
-        .catch(err => { console.log(err); });
-
-    if (!client) {
-        return;
-    }
+async function insertData() {
     try {
-        const db = client.db('fiservTest');
         var batch = db.collection('authorisations').initializeUnorderedBulkOp();
-        for (var i = 0; i < numberOfDocs; ++i) {
-            var auth = generateAuth()
-            batch.insert(auth);
+        for (var i = 0; i < BATCH_SIZE; ++i) {
+            var auth = await generateAuth()
+            await batch.insert(auth);
         }
         // Execute the operations
         let res = await batch.execute()
         // console.log(res);
     } catch (err) {
-        console.log(err);
-    } finally {
-        client.close();
+        log(err);
     }
 }
 
 async function load() {
-    var myArgs = process.argv.slice(2);
-    if (myArgs.length != 2) {
-        throw("Need to to supply a URI as the first parameter and number of documents to load as the second")
-    }
-    var URI = myArgs[0]
-    if  (typeof URI === "undefined") {
-        throw("Need to to supply a URI as the first parameter")
-    }
-    var numberOfDocs = myArgs[1]
-    if  (typeof numberOfDocs === "undefined") {
-        numberOfDocs = 1000
-    }
+    await initialize()
     var counter = Math.ceil(numberOfDocs/BATCH_SIZE)
-    console.log("loading "+numberOfDocs+" in "+counter+" batches of "+BATCH_SIZE+"\n")
+    log("\n****************************************************************\n")
+    var currentdate = new Date();
+    var datetime = currentdate.getDay() + "/" + currentdate.getMonth() 
+    + "/" + currentdate.getFullYear() + " @ " 
+    + currentdate.getHours() + ":" 
+    + currentdate.getMinutes() + ":" + currentdate.getSeconds();
+    log("\nloading "+numberOfDocs+" in "+counter+" batches of "+BATCH_SIZE+" at "+datetime+"\n")
     for (var j=0; j<counter; j++){
         var before = new Date()
-        let res = await insertData(URI, numberOfDocs)
+        let res = await insertData()
         var after = new Date()
         execution_mills = after - before
-        console.log("Total time for batch "+ j+ " = "+execution_mills+" (ms)")
+        log("Total time for batch "+ j+ " = "+execution_mills+" (ms)")
     }
+    await client.close();
 }
 
 load()
