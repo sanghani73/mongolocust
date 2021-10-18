@@ -11,7 +11,7 @@
 var fs = require('fs');
 var mgenerate = require('mgeneratejs');
 const { EJSON } = require('bson');
-const BATCH_SIZE=1000
+const BATCH_SIZE=10000
 var MongoClient = require('mongodb').MongoClient;
 var URI
 var numberOfDocs
