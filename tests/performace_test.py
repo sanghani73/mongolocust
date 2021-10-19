@@ -1,8 +1,9 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from locust import task, between
 
 from mongo_user import MongoUser
 import random
+import generate_authorisation
 
 # number of cache entries for updates and queries
 IDS_TO_CACHE = 1000000
@@ -19,34 +20,16 @@ class MongoSampleUser(MongoUser):
         self.auth_id_cache = []
         self.authorisation_collection = None
 
-    def generate_new_authorisation(self):
-        """
-        Generate an authorisation document
-        """
-        document = {
-            'auth_id': self.faker.uuid4(),
-            'merch_id': self.faker.random_int(min=901000, max=901030),
-            'alliance_code': self.faker.lexify(text='????', letters='ABCDEFGHIJKLMNOPQRSTUVWXYZ'),
-            'bank_name': self.faker.lexify(text='???? PLC.', letters='ABCDEFGHIJKLMNOPQRSTUVWXYZ'),
-            'bank_country': self.faker.country(),
-            'posting_date': self.faker.date_time_between(start_date='-2y', end_date='-1y'),
-            'merchant_detals': {
-                'external_merch_id': self.faker.random_int(min=100000, max=999999),
-                'custom_merch_id': self.faker.random_int(min=100000, max=999999),
-            }
-        }
-        return document
-
     def on_start(self):
         """
         Executed every time a new test is started - place init code here
         """
         # prepare the collection
-        self.authorisation_collection = self.ensure_collection('authorisations', '')
+        self.authorisation_collection = self.ensure_collection('authorisations')
         self.auth_id_cache = []
 
     def insert_authorisation(self):
-        document = self.generate_new_authorisation()
+        document = generate_authorisation.Authorisation.generate_authorisation_doc(3)
 
         self.auth_id_to_cache = (document['auth_id'])
         if len(self.auth_id_cache) < IDS_TO_CACHE:
@@ -65,20 +48,41 @@ class MongoSampleUser(MongoUser):
 
         # find a random document using an the auth id and update it
         auth_id = random.choice(self.auth_id_cache)
-        # self.collection.find_one({'first_name': cached_names[0], 'last_name': cached_names[1]})
         self.authorisation_collection.update_one({'auth_id': auth_id}, {
-                '$currentDate': {'updates.last_updated': { '$type': 'date' },
-                '$set': {'updates.some_field': 'some_value'}}
+                '$currentDate': {'updates.last_updated': { '$type': 'date' }},
+                '$set': {'updates.some_field': 'some_value'}
                 })
 
     def find_authorisation(self):
-        # Find a random auth id to update
-        if not self.auth_id_cache:
-            return
+        # Find a random day & time to search
+        day = random.randint(1, 30)
+        start_hr = random.randint(0, 22)
+        end_hr = start_hr+1
+
+        filter={
+            'merch_id': 30001, 
+            'alliance_code': 'CODE123', 
+            'posting_date': {
+                '$gte': datetime(2021, 6, day, start_hr, 0, 0, tzinfo=timezone.utc), 
+                '$lte': datetime(2021, 6, day, end_hr, 0, 0, tzinfo=timezone.utc)
+            }
+        }
+        sort=list({
+            'posting_date': -1
+        }.items())
+        skip=0
+        limit=10
 
         # find a random document using an the auth id and update it
-        auth_id = random.choice(self.auth_id_cache)
-        self.authorisation_collection.find_one({'auth_id': auth_id})
+        return list(self.authorisation_collection.find(
+            filter=filter,
+            sort=sort,
+            skip=skip,
+            limit=limit
+        ))
+
+
+
 
     @task(weight=1)
     def do_find_authorisation(self):
