@@ -99,3 +99,34 @@ Debugging the workload
 It is possible to debug locust workloads. The [main.py](main.py) contains the code required to run the 
 workload generation under the python interpreter. Gevent compatibility should be enabled in your
 favourite IDE debugger (feature supported both in Pycharm and VSCode) for this to work. 
+
+# Performance Testing
+## Read tests
+All performance tests are found in `tests/perfomance_test.py`. There are 2 types of high level queries:
+
+### Get authorisations by date with start and end time
+
+1. between 9am and 10am
+	1. merchant_id + alliance_code
+	2. 1 + page number
+	3. 1 + 1 random attribute
+	4. 1 + 7 random attributes
+2. between 00:00:00 and 23:59:59
+	1. merchant_id + alliance_code
+	2. 1 + page number
+	3. 1 + 7 random attributes
+
+### Get authorisations by date range
+
+1. weekly range
+	1. merchant_id + alliance_code
+	2. 1 + page number
+	3. 1 + 7 random attributes
+2. monthly range
+	1. merchant_id + alliance_code
+	2. 1 + page number
+	3. 1 + 7 random attributes
+3. yearly range
+	1. merchant_id + alliance_code
+	2. 1 + page number
+	3. 1 + 7 random attributes

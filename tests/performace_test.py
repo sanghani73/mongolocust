@@ -1,11 +1,16 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from locust import task, between
+from faker import Faker
+from random import randrange
+import pymongo
 
 from mongo_user import MongoUser
 import random
+import generate_authorisation
 
 # number of cache entries for updates and queries
 IDS_TO_CACHE = 1000000
+ALLIANCE_CODE = "CODE123"
 
 class MongoSampleUser(MongoUser):
     """
@@ -14,39 +19,27 @@ class MongoSampleUser(MongoUser):
     # no delays between operations
     wait_time = between(0.0, 0.0)
 
+    def generate_random_date(start, end):
+        delta = end - start
+        int_delta = (delta.days * 24 * 60 * 60) + delta.seconds
+        random_second = randrange(int_delta)
+        return start + timedelta(seconds=random_second)  
+
     def __init__(self, environment):
         super().__init__(environment)
         self.auth_id_cache = []
         self.authorisation_collection = None
-
-    def generate_new_authorisation(self):
-        """
-        Generate an authorisation document
-        """
-        document = {
-            'auth_id': self.faker.uuid4(),
-            'merch_id': self.faker.random_int(min=901000, max=901030),
-            'alliance_code': self.faker.lexify(text='????', letters='ABCDEFGHIJKLMNOPQRSTUVWXYZ'),
-            'bank_name': self.faker.lexify(text='???? PLC.', letters='ABCDEFGHIJKLMNOPQRSTUVWXYZ'),
-            'bank_country': self.faker.country(),
-            'posting_date': self.faker.date_time_between(start_date='-2y', end_date='-1y'),
-            'merchant_detals': {
-                'external_merch_id': self.faker.random_int(min=100000, max=999999),
-                'custom_merch_id': self.faker.random_int(min=100000, max=999999),
-            }
-        }
-        return document
 
     def on_start(self):
         """
         Executed every time a new test is started - place init code here
         """
         # prepare the collection
-        self.authorisation_collection = self.ensure_collection('authorisations', '')
+        self.authorisation_collection = self.ensure_collection('authorisations')
         self.auth_id_cache = []
 
     def insert_authorisation(self):
-        document = self.generate_new_authorisation()
+        document = generate_authorisation.Authorisation.generate_new_grouped_authorisation_doc(10000, 10100)
 
         self.auth_id_to_cache = (document['auth_id'])
         if len(self.auth_id_cache) < IDS_TO_CACHE:
@@ -80,15 +73,44 @@ class MongoSampleUser(MongoUser):
         auth_id = random.choice(self.auth_id_cache)
         self.authorisation_collection.find_one({'auth_id': auth_id})
 
-    @task(weight=1)
-    def do_find_authorisation(self):
-        self._process('find-authorisation-1', self.find_authorisation)
+    def find_authorisation_by_start_and_end_date(self, merch_id, start_time, end_time):
+        self.authorisation_collection.find({
+                                            'merch_id': merch_id, 
+                                            'alliance_code': ALLIANCE_CODE, 
+                                            'posting_date': { "$gte": start_time , "$lt": end_time } 
+                                            })
 
     @task(weight=1)
-    def do_insert_authorisation(self):
-        self._process('insert-authorisation', self.insert_authorisation)
+    # Find all authorisations on given date between given times for a single merchant & alliance code
+    def do_find_authorisation_on_given_day_between_given_times(self):
+        faker = Faker()
+        merch_id = "30001"
+
+        # Generate a random date to select from the collection
+        search_date = faker.date_time_between(start_date='-2y', end_date='-1y')
+        start_time = datetime.datetime(search_date.year, search_date.month, search_date.day, 9, 0, 0)
+        end_time = datetime.datetime(search_date.year, search_date.month, search_date.day, 10, 0, 0)
+
+        self._process('find-authorisation-by-date', self.find_authorisation_by_date(merch_id, start_time, end_time))
 
     @task(weight=1)
-    def do_update_authorisation(self):
-        self._process('update-authorisation', self.update_authorisation)
+    # authorisations that took place in a single day for a single merchant & alliance code
+    def do_find_authorisation_on_single_day(self):
+        faker = Faker()
+        merch_id = "30002"
+
+        # Generate a random date to select from the collection
+        search_date = faker.date_time_between(start_date='-2y', end_date='-1y')
+        start_time = datetime.datetime(search_date.year, search_date.month, search_date.day, 0, 0, 0)
+        end_time = datetime.datetime(search_date.year, search_date.month, search_date.day, 23, 59, 59, 9999)
+
+        self._process('find-authorisation-by-date', self.find_authorisation_by_date(merch_id, start_time, end_time))
+
+    # @task(weight=1)
+    # def do_insert_authorisation(self):
+    #     self._process('insert-authorisation', self.insert_authorisation)
+
+    # @task(weight=1)
+    # def do_update_authorisation(self):
+    #     self._process('update-authorisation', self.update_authorisation)
 
