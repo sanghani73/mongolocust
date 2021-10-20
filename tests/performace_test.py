@@ -39,7 +39,7 @@ class MongoSampleUser(MongoUser):
         self.auth_id_cache = []
 
     def insert_authorisation(self):
-        document = generate_authorisation.Authorisation.generate_new_grouped_authorisation_doc(10000, 10100)
+        document = generate_authorisation.Authorisation.generate_authorisation_doc(3)
 
         self.auth_id_to_cache = (document['auth_id'])
         if len(self.auth_id_cache) < IDS_TO_CACHE:
@@ -58,20 +58,41 @@ class MongoSampleUser(MongoUser):
 
         # find a random document using an the auth id and update it
         auth_id = random.choice(self.auth_id_cache)
-        # self.collection.find_one({'first_name': cached_names[0], 'last_name': cached_names[1]})
         self.authorisation_collection.update_one({'auth_id': auth_id}, {
-                '$currentDate': {'updates.last_updated': { '$type': 'date' },
-                '$set': {'updates.some_field': 'some_value'}}
+                '$currentDate': {'updates.last_updated': { '$type': 'date' }},
+                '$set': {'updates.some_field': 'some_value'}
                 })
 
     def find_authorisation(self):
-        # Find a random auth id to update
-        if not self.auth_id_cache:
-            return
+        # Find a random day & time to search
+        day = random.randint(1, 30)
+        start_hr = random.randint(0, 22)
+        end_hr = start_hr+1
+
+        filter={
+            'merch_id': 30001, 
+            'alliance_code': 'CODE123', 
+            'posting_date': {
+                '$gte': datetime(2021, 6, day, start_hr, 0, 0, tzinfo=timezone.utc), 
+                '$lte': datetime(2021, 6, day, end_hr, 0, 0, tzinfo=timezone.utc)
+            }
+        }
+        sort=list({
+            'posting_date': -1
+        }.items())
+        skip=0
+        limit=10
 
         # find a random document using an the auth id and update it
-        auth_id = random.choice(self.auth_id_cache)
-        self.authorisation_collection.find_one({'auth_id': auth_id})
+        return list(self.authorisation_collection.find(
+            filter=filter,
+            sort=sort,
+            skip=skip,
+            limit=limit
+        ))
+
+
+
 
     def find_authorisation_by_start_and_end_date(self, merch_id, start_time, end_time):
         self.authorisation_collection.find({

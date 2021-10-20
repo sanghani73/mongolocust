@@ -1,9 +1,19 @@
 from typing import OrderedDict
 from faker import Faker
+from datetime import datetime
 
 class Authorisation:
-    def generate_new_grouped_authorisation_doc(group_range_min, group_range_max):
+    def generate_authorisation_doc(merchant_group):
         faker = Faker()
+        if (merchant_group == 1):
+            min_group = 10000
+            max_group = 10100
+        elif (merchant_group == 2):
+            min_group = 20000
+            max_group = 20020
+        else:
+            min_group = 30001
+            max_group = 30002
 
         """
         Generate an authorisation document using weights to switch between the 3 groups of merchants
@@ -11,12 +21,13 @@ class Authorisation:
         document = {
             'auth_id': faker.uuid4(),
             # using defined number of requests in script for each group range
-            'merch_id': faker.random_int(min=group_range_min, max=group_range_max),
+            'merch_id': faker.random_int(min=min_group, max=max_group),
             # 'alliance_code': faker.lexify(text='????', letters='ABCDEFGHIJKLMNOPQRSTUVWXYZ'),
             'alliance_code': 'CODE123',
             'bank_name': faker.lexify(text='???? PLC.', letters='ABCDEFGHIJKLMNOPQRSTUVWXYZ'),
             'bank_country': faker.country(),
-            'posting_date': faker.date_time_between(start_date='-2y', end_date='-1y'),
+            # load posting data for month of June 2021
+            'posting_date': faker.date_time_between_dates(datetime_start=datetime(2021,6,1,0,0,0), datetime_end=datetime(2021,7,1,0,0,0)),
             'merchant_details': {
                 'external_merch_id': faker.random_int(min=100000, max=999999),
                 'custom_merch_id': faker.random_int(min=100000, max=999999),
