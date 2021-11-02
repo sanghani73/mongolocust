@@ -58,10 +58,12 @@ class MongoSampleUser(MongoUser):
         day = random.randint(1, 30)
         start_hr = random.randint(0, 22)
         end_hr = start_hr+1
+        merch_id = random.randint(30001, 30002)
+        alliance_code = 'CODE123'
 
         filter={
-            'merch_id': 30001, 
-            'alliance_code': 'CODE123', 
+            'merch_id': merch_id, 
+            'alliance_code': alliance_code, 
             'posting_date': {
                 '$gte': datetime(2020, 6, day, start_hr, 0, 0, tzinfo=timezone.utc), 
                 '$lte': datetime(2020, 6, day, end_hr, 0, 0, tzinfo=timezone.utc)
@@ -70,7 +72,8 @@ class MongoSampleUser(MongoUser):
         sort=list({
             'posting_date': -1
         }.items())
-        skip=random.randomint(0,10)
+        # fetch a random page of data
+        skip=random.randint(0,10)
         limit=50
 
         # find a random document using an the auth id and update it
