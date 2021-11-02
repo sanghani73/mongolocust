@@ -119,9 +119,9 @@ class MongoSampleUser(MongoUser):
     def do_find_authorisation1(self):
         self._process('find-authorisation-1hr', self.find_authorisation_1hr)
 
-    @task(weight=1)
-    def do_find_authorisation2(self):
-        self._process('find-authorisation-1day', self.find_authorisation_1day)
+    # @task(weight=1)
+    # def do_find_authorisation2(self):
+    #     self._process('find-authorisation-1day', self.find_authorisation_1day)
 
     # @task(weight=1)
     # def do_insert_authorisation(self):
