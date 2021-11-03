@@ -54,7 +54,7 @@ async function generateAuth() {
     return mgenerate(
        {
            "auth_id": "$objectid",
-           "merch_id": {"$number": {"min": 30001, "max": 30002}},
+           "merch_id": {"$number": {"min": 20000, "max": 20020}},
            "alliance_code" : "CODE123",
            "bank_name": "bank_name",
            "bank_country": "$country",
