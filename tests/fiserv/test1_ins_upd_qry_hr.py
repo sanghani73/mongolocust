@@ -19,13 +19,14 @@ class MongoSampleUser(MongoUser):
         super().__init__(environment)
         self.auth_id_cache = []
         self.authorisation_collection = None
+        self.authorisation_collection_secondary = None
 
     def on_start(self):
         """
         Executed every time a new test is started - place init code here
         """
         # prepare the collection
-        self.authorisation_collection = self.ensure_collection('authorisations')
+        self.authorisation_collection, self.authorisation_collection_secondary = self.ensure_collection_get_secondary('authorisations')
         self.auth_id_cache = []
 
     def insert_authorisation(self):
@@ -53,7 +54,7 @@ class MongoSampleUser(MongoUser):
                 '$set': {'updates.some_field': 'some_value'}
                 })
 
-    def find_authorisation_1hr(self):
+    def find_authorisation_1_hr(self):
         # Find a random day & time to search
         day = random.randint(1, 30)
         start_hr = random.randint(0, 22)
@@ -77,57 +78,22 @@ class MongoSampleUser(MongoUser):
         limit=50
 
         # find a random document using an the auth id and update it
-        return list(self.authorisation_collection.find(
+        return list(self.authorisation_collection_secondary.find(
             filter=filter,
             sort=sort,
             skip=skip,
             limit=limit
         ))
-
-    def find_authorisation_1day(self):
-        # Find a random day & time to search
-        day = random.randint(1, 29)
-        end_day = day+1
-        merch_id = random.randint(30001, 30002)
-        alliance_code = 'CODE123'
-
-        filter={
-            'merch_id': merch_id, 
-            'alliance_code': alliance_code, 
-            'posting_date': {
-                '$gte': datetime(2020, 6, day, 0, 0, 0, tzinfo=timezone.utc), 
-                '$lte': datetime(2020, 6, end_day, 0, 0, 0, tzinfo=timezone.utc)
-            }
-        }
-        sort=list({
-            'posting_date': -1
-        }.items())
-        # fetch a random page of data
-        skip=random.randint(0,10)
-        limit=50
-
-        # find a random document using an the auth id and update it
-        return list(self.authorisation_collection.find(
-            filter=filter,
-            sort=sort,
-            skip=skip,
-            limit=limit
-        ))
-
 
     @task(weight=1)
     def do_find_authorisation1(self):
-        self._process('find-authorisation-1hr', self.find_authorisation_1hr)
+        self._process('find-authorisation-1_hr', self.find_authorisation_1_hr)
 
-    # @task(weight=1)
-    # def do_find_authorisation2(self):
-    #     self._process('find-authorisation-1day', self.find_authorisation_1day)
+    @task(weight=1)
+    def do_insert_authorisation(self):
+        self._process('insert-authorisation', self.insert_authorisation)
 
-    # @task(weight=1)
-    # def do_insert_authorisation(self):
-    #     self._process('insert-authorisation', self.insert_authorisation)
-
-    # @task(weight=1)
-    # def do_update_authorisation(self):
-    #     self._process('update-authorisation', self.update_authorisation)
+    @task(weight=1)
+    def do_update_authorisation(self):
+        self._process('update-authorisation', self.update_authorisation)
 

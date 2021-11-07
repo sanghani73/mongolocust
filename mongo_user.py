@@ -56,9 +56,9 @@ class MongoUser(User):
                     request_type='mongo', name=name, response_time=total_time, response_length=1
                 )
 
-    def ensure_collection_with_secondary_rp(self, coll_name, indexes, read_preference=pymongo.read_preferences.Secondary()):
+    def ensure_collection_get_secondary(self, coll_name, read_preference=pymongo.read_preferences.Secondary()):
         """
-        Define the collection and its indexes
+        Define the collection and return handle to secondary node for r/o workloads
         """
         # prepare a codec for decimal values
         decimal_codec = DecimalCodec()
@@ -73,16 +73,12 @@ class MongoUser(User):
             collection = self.db.get_collection(
                 coll_name, codec_options=codec_options)
 
-        # create the required indexes
-        if indexes:
-            collection.create_indexes(indexes)
-
         # also return the second collection with readPreference
         return collection, self.db.get_collection(coll_name, read_preference=read_preference)
 
     def ensure_collection(self, coll_name):
         """
-        Define the collection and its indexes
+        Define the collection
         """
         # prepare a codec for decimal values
         decimal_codec = DecimalCodec()
