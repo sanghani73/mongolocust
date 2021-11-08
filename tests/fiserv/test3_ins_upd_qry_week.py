@@ -29,17 +29,16 @@ class MongoSampleUser(MongoUser):
         self.auth_id_cache = []
 
     def insert_authorisation(self):
-        document = generate_authorisation.Authorisation.generate_authorisation_doc(2)
+        document = generate_authorisation.Authorisation.generate_authorisation_doc(3)
+        result = self.collection.insert_one(document)
 
-        self.auth_id_to_cache = (document['auth_id'])
+        self.auth_id_to_cache = (result.inserted_id)
         if len(self.auth_id_cache) < IDS_TO_CACHE:
             self.auth_id_cache.append(self.auth_id_to_cache)
         else:
             # randomly update one of the cached entries so we're not always working on the same ids
             if random.randint(0, 9) == 0:
                 self.auth_id_cache[random.randint(0, len(self.auth_id_cache) - 1)] = self.auth_id_to_cache
-
-        self.collection.insert_one(document)
 
     def update_authorisation(self):
         # Find a random auth id to update
@@ -48,7 +47,7 @@ class MongoSampleUser(MongoUser):
 
         # find a random document using an the auth id and update it
         auth_id = random.choice(self.auth_id_cache)
-        self.collection.update_one({'auth_id': auth_id}, {
+        self.collection.update_one({'_id': auth_id}, {
                 '$currentDate': {'updates.last_updated': { '$type': 'date' }},
                 '$set': {'updates.some_field': 'some_value'}
                 })
