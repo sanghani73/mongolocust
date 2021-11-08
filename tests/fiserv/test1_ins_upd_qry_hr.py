@@ -7,6 +7,7 @@ import generate_authorisation
 
 # number of cache entries for updates and queries
 IDS_TO_CACHE = 1000000
+COLLECTION_NAME = 'authorisations'
 
 class MongoSampleUser(MongoUser):
     """
@@ -18,15 +19,13 @@ class MongoSampleUser(MongoUser):
     def __init__(self, environment):
         super().__init__(environment)
         self.auth_id_cache = []
-        self.authorisation_collection = None
-        self.authorisation_collection_secondary = None
 
     def on_start(self):
         """
         Executed every time a new test is started - place init code here
         """
         # prepare the collection
-        self.authorisation_collection, self.authorisation_collection_secondary = self.ensure_collection_get_secondary('authorisations')
+        self.collection, self.collection_secondary = self.ensure_collection(COLLECTION_NAME, None)
         self.auth_id_cache = []
 
     def insert_authorisation(self):
@@ -40,7 +39,7 @@ class MongoSampleUser(MongoUser):
             if random.randint(0, 9) == 0:
                 self.auth_id_cache[random.randint(0, len(self.auth_id_cache) - 1)] = self.auth_id_to_cache
 
-        self.authorisation_collection.insert_one(document)
+        self.collection.insert_one(document)
 
     def update_authorisation(self):
         # Find a random auth id to update
@@ -49,7 +48,7 @@ class MongoSampleUser(MongoUser):
 
         # find a random document using an the auth id and update it
         auth_id = random.choice(self.auth_id_cache)
-        self.authorisation_collection.update_one({'auth_id': auth_id}, {
+        self.collection.update_one({'auth_id': auth_id}, {
                 '$currentDate': {'updates.last_updated': { '$type': 'date' }},
                 '$set': {'updates.some_field': 'some_value'}
                 })
@@ -78,7 +77,7 @@ class MongoSampleUser(MongoUser):
         limit=50
 
         # find a random document using an the auth id and update it
-        return list(self.authorisation_collection_secondary.find(
+        return list(self.collection_secondary.find(
             filter=filter,
             sort=sort,
             skip=skip,
@@ -86,7 +85,7 @@ class MongoSampleUser(MongoUser):
         ))
 
     @task(weight=1)
-    def do_find_authorisation1(self):
+    def do_find_authorisation(self):
         self._process('find-authorisation-1_hr', self.find_authorisation_1_hr)
 
     @task(weight=1)
